@@ -3,8 +3,10 @@ package org.dcache.nfs.v4;
 import static org.dcache.nfs.v4.xdr.layouttype4.LAYOUT4_BLOCK_VOLUME;
 import static org.dcache.nfs.v4.xdr.layouttype4.LAYOUT4_OSD2_OBJECTS;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -14,7 +16,11 @@ import java.util.Optional;
 
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.v4.xdr.fattr4_fs_layout_types;
+import org.dcache.nfs.v4.xdr.fattr4_space_total;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
+import org.dcache.nfs.vfs.FsStat;
+import org.dcache.nfs.vfs.Inode;
+import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.oncrpc4j.rpc.RpcAuthTypeNone;
 import org.dcache.oncrpc4j.rpc.RpcCall;
 import org.dcache.oncrpc4j.rpc.RpcTransport;
@@ -51,6 +57,20 @@ public class OperationGETATTRTest {
         assertArrayEquals("export without explicit layout type must return all configures layout types",
                 new int[] {LAYOUT4_OSD2_OBJECTS.getValue(), LAYOUT4_BLOCK_VOLUME.getValue()}, res.get().value);
 
+    }
+
+    @Test
+    public void shouldReportSpaceOfQueriedObject() throws IOException {
+
+        VirtualFileSystem fs = mock(VirtualFileSystem.class);
+        Inode inode = Inode.forFile(new byte[] {1, 2, 3});
+        given(fs.getFsStat(inode)).willReturn(new FsStat(1000, 10, 400, 5));
+
+        Optional<fattr4_space_total> res = (Optional<fattr4_space_total>) OperationGETATTR.fattr2xdr(
+                nfs4_prot.FATTR4_SPACE_TOTAL, fs, inode, null, null);
+
+        verify(fs).getFsStat(inode);
+        assertEquals(1000, res.get().value);
     }
 
 }

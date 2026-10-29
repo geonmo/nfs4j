@@ -244,6 +244,27 @@ public class VfsCacheTest {
         verify(vfs, times(2)).list(root, DirectoryStream.ZERO_VERIFIER, 0L);
     }
 
+    @Test
+    public void shouldPassInodeToFsStat() throws IOException {
+
+        Inode dir = createDir(root, "dir");
+        vfsCache.getFsStat(dir);
+
+        verify(vfs).getFsStat(dir);
+    }
+
+    @Test
+    public void shouldCacheFsStatPerInode() throws IOException {
+
+        Inode dir = createDir(root, "dir");
+        vfsCache.getFsStat(root);
+        vfsCache.getFsStat(root);
+        vfsCache.getFsStat(dir);
+
+        verify(vfs, times(1)).getFsStat(root);
+        verify(vfs, times(1)).getFsStat(dir);
+    }
+
     private Inode createFile(Inode parent, String name) throws IOException {
         return vfs.create(parent, Stat.Type.REGULAR, name, subject, 0640);
     }

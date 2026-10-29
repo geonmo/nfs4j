@@ -384,6 +384,11 @@ public class PseudoFs extends ForwardingFileSystem {
     }
 
     @Override
+    public FsStat getFsStat(Inode inode) throws IOException {
+        return _inner.getFsStat(innerInode(inode));
+    }
+
+    @Override
     public Stat getattr(Inode inode) throws IOException {
         checkAccess(inode, ACE4_READ_ATTRIBUTES);
         return _inner.getattr(innerInode(inode));

@@ -428,7 +428,8 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.status = nfsstat.NFS_OK;
             res.resok = new FSSTAT3resok();
 
-            FsStat fsStat = fs.getFsStat();
+            Inode inode = new Inode(arg1.fsroot.data);
+            FsStat fsStat = fs.getFsStat(inode);
             res.resok.tbytes = new size3(fsStat.getTotalSpace());
             res.resok.fbytes = new size3(fsStat.getTotalSpace() - fsStat.getUsedSpace());
             res.resok.abytes = new size3(fsStat.getTotalSpace() - fsStat.getUsedSpace());
@@ -442,8 +443,6 @@ public class NfsServerV3 extends nfs3_protServerStub {
             res.resok.obj_attributes = new post_op_attr();
             res.resok.obj_attributes.attributes_follow = true;
             res.resok.obj_attributes.attributes = new fattr3();
-
-            Inode inode = new Inode(arg1.fsroot.data);
 
             Utils.fill_attributes(fs.getattr(inode), res.resok.obj_attributes.attributes);
 

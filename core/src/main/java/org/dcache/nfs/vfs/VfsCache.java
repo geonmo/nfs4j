@@ -49,6 +49,7 @@ public class VfsCache extends ForwardingFileSystem {
     private final Cache<Opaque, Stat> _statCache;
     private final LoadingCache<Inode, Inode> _parentCache;
     private final Supplier<FsStat> _fsStatSupplier;
+    private final Cache<Opaque, FsStat> _fsStatCache;
 
     private final Cache<InodeCacheEntry, DirectoryStream> _readdirCache;
 
@@ -87,10 +88,17 @@ public class VfsCache extends ForwardingFileSystem {
         _fsStatSupplier = cacheConfig.getFsStatLifeTime() > 0 ? Suppliers.memoizeWithExpiration(new FsStatSupplier(),
                 cacheConfig.getFsStatLifeTime(), cacheConfig.getFsSataTimeUnit()) : new FsStatSupplier();
 
+        _fsStatCache = CacheBuilder.newBuilder()
+                .maximumSize(cacheConfig.getMaxEntries())
+                .expireAfterWrite(cacheConfig.getFsStatLifeTime(), cacheConfig.getFsSataTimeUnit())
+                .recordStats()
+                .build();
+
         new GuavaCacheMXBeanImpl("vfs-stat", _statCache);
         new GuavaCacheMXBeanImpl("vfs-parent", _parentCache);
         new GuavaCacheMXBeanImpl("vfs-lookup", _lookupCache);
         new GuavaCacheMXBeanImpl("vfs-readdir", _readdirCache);
+        new GuavaCacheMXBeanImpl("vfs-fsstat", _fsStatCache);
     }
 
     @Override
@@ -163,6 +171,17 @@ public class VfsCache extends ForwardingFileSystem {
     @Override
     public FsStat getFsStat() throws IOException {
         return _fsStatSupplier.get();
+    }
+
+    @Override
+    public FsStat getFsStat(Inode inode) throws IOException {
+        try {
+            return _fsStatCache.get(inode.getFileIdKey(), () -> _inner.getFsStat(inode));
+        } catch (ExecutionException e) {
+            Throwable t = e.getCause();
+            Throwables.throwIfInstanceOf(t, IOException.class);
+            throw new IOException(e.getMessage(), t);
+        }
     }
 
     @Override

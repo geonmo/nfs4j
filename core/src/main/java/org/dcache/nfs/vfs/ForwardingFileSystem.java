@@ -62,6 +62,11 @@ public abstract class ForwardingFileSystem implements VirtualFileSystem {
     }
 
     @Override
+    public FsStat getFsStat(Inode inode) throws IOException {
+        return delegate().getFsStat(inode);
+    }
+
+    @Override
     public Inode getRootInode() throws IOException {
         return delegate().getRootInode();
     }

@@ -847,4 +847,35 @@ public class PseudoFsTest {
         Inode pseudoRoot = pseudoFs.getRootInode();
         pseudoFs.list(pseudoRoot, DirectoryStream.ZERO_VERIFIER, 0);
     }
+    @Test
+    public void shouldPassInnerInodeToFsStat() throws IOException {
+
+        given(mockedTransport.getRemoteSocketAddress()).willReturn(localAddress);
+        given(mockedAuth.getSubject()).willReturn(ROOT);
+        given(mockedRpc.getTransport()).willReturn(mockedTransport);
+        given(mockedRpc.getCredential()).willReturn(mockedAuth);
+
+        vfs = spy(vfs);
+        Inode foo = vfs.mkdir(fsRoot, "foo", ROOT, 0755);
+        FsExport export = new FsExport.FsExportBuilder()
+                .rw()
+                .trusted()
+                .withoutAcl()
+                .withSec(FsExport.Sec.SYS)
+                .build("/foo");
+
+        given(mockedExportFile.getExport(export.getIndex(), localAddress.getAddress())).willReturn(export);
+        given(mockedExportFile.exports(localAddress.getAddress())).willAnswer(x -> Stream.of(export));
+
+        pseudoFs = new PseudoFs(vfs, mockedRpc, mockedExportFile);
+        Inode pseudoRoot = pseudoFs.getRootInode();
+        Inode exportDir = pseudoFs.lookup(pseudoRoot, "foo");
+
+        pseudoFs.getFsStat(pseudoRoot);
+        pseudoFs.getFsStat(exportDir);
+
+        verify(vfs).getFsStat(argThat(i -> !i.isPseudoInode() && i.getFileIdKey().equals(fsRoot.getFileIdKey())));
+        verify(vfs).getFsStat(argThat(i -> !i.isPseudoInode() && i.getFileIdKey().equals(foo.getFileIdKey())));
+    }
+
 }

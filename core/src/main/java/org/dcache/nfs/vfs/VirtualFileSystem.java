@@ -89,6 +89,19 @@ public interface VirtualFileSystem {
     FsStat getFsStat() throws IOException;
 
     /**
+     * Get usage information of the file system as seen from the given object. A file system that
+     * reports different space for different parts of its tree, e.g. per quota or storage area, can
+     * use the object the client asked about. The default implementation ignores it.
+     *
+     * @param inode the object the client asked about.
+     * @return file system's usage information.
+     * @throws IOException
+     */
+    default FsStat getFsStat(Inode inode) throws IOException {
+        return getFsStat();
+    }
+
+    /**
      * Get inode of the root object for given file system.
      *
      * @return inode of the root object.

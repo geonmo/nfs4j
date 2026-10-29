@@ -170,11 +170,11 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
         return getAttributes(bitmap, fs, inode, context.getFs().getattr(inode), context);
     }
 
-    private static FsStat getFsStat(FsStat fsStat, VirtualFileSystem fs) throws IOException {
+    private static FsStat getFsStat(FsStat fsStat, VirtualFileSystem fs, Inode inode) throws IOException {
         if (fsStat != null) {
             return fsStat;
         }
-        return fs.getFsStat();
+        return fs.getFsStat(inode);
     }
 
     /**
@@ -274,15 +274,15 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                     return Optional.empty();
                 }
             case nfs4_prot.FATTR4_FILES_AVAIL:
-                fsStat = getFsStat(fsStat, fs);
+                fsStat = getFsStat(fsStat, fs, inode);
                 fattr4_files_avail files_avail = new fattr4_files_avail(fsStat.getTotalFiles() - fsStat.getUsedFiles());
                 return Optional.of(files_avail);
             case nfs4_prot.FATTR4_FILES_FREE:
-                fsStat = getFsStat(fsStat, fs);
+                fsStat = getFsStat(fsStat, fs, inode);
                 fattr4_files_free files_free = new fattr4_files_free(fsStat.getTotalFiles() - fsStat.getUsedFiles());
                 return Optional.of(files_free);
             case nfs4_prot.FATTR4_FILES_TOTAL:
-                fsStat = getFsStat(fsStat, fs);
+                fsStat = getFsStat(fsStat, fs, inode);
                 return Optional.of(new fattr4_files_total(fsStat.getTotalFiles()));
             case nfs4_prot.FATTR4_FS_LOCATIONS:
                 return Optional.empty();
@@ -329,15 +329,15 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                 dev.specdata2 = 0;
                 return Optional.of(new fattr4_rawdev(dev));
             case nfs4_prot.FATTR4_SPACE_AVAIL:
-                fsStat = getFsStat(fsStat, fs);
+                fsStat = getFsStat(fsStat, fs, inode);
                 fattr4_space_avail spaceAvail = new fattr4_space_avail(fsStat.getTotalSpace() - fsStat.getUsedSpace());
                 return Optional.of(spaceAvail);
             case nfs4_prot.FATTR4_SPACE_FREE:
-                fsStat = getFsStat(fsStat, fs);
+                fsStat = getFsStat(fsStat, fs, inode);
                 fattr4_space_free space_free = new fattr4_space_free(fsStat.getTotalSpace() - fsStat.getUsedSpace());
                 return Optional.of(space_free);
             case nfs4_prot.FATTR4_SPACE_TOTAL:
-                fsStat = getFsStat(fsStat, fs);
+                fsStat = getFsStat(fsStat, fs, inode);
                 return Optional.of(new fattr4_space_total(fsStat.getTotalSpace()));
             case nfs4_prot.FATTR4_SPACE_USED:
                 return Optional.of(new fattr4_space_used(stat.getSize()));
