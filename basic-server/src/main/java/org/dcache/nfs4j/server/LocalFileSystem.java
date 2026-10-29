@@ -231,6 +231,17 @@ public class LocalFileSystem implements VirtualFileSystem {
         return new FsStat(total, Long.MAX_VALUE, total - free, pathToInode.size());
     }
 
+    // E2E TEST ONLY: report the local file system holding the queried object.
+    @Override
+    public FsStat getFsStat(Inode inode) throws IOException {
+        Path path = resolveInode(inode);
+        FileStore store = Files.getFileStore(path);
+        long total = store.getTotalSpace();
+        long free = store.getUsableSpace();
+        LOG.info("E2E getFsStat {} -> {} total={} free={}", path, store, total, free);
+        return new FsStat(total, Long.MAX_VALUE, total - free, pathToInode.size());
+    }
+
     @Override
     public Inode getRootInode() throws IOException {
         return rootInode;
